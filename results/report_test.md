@@ -2,6 +2,8 @@
 
 Questions: 107 (92 answerable, 15 unanswerable). Model: `typesafe/jev-1.13`; candidates per question: 30.
 
+Questions scored per reranker (of 107 in this split): none 107, flashrank 107, cohere 107, cohere_pro 107, jev_pair 107. Every table below compares only the 107 questions that all of them have scored.
+
 ## Candidate recall@30 (ceiling for all rerankers)
 
 Gold chunk present in the candidate list for **90.2%** of answerable questions (83/92).
@@ -58,16 +60,16 @@ Jev pair latency is the slowest single request (all pair calls assumed concurren
 | reranker | p50 latency (s) | p95 latency (s) | mean input tokens | mean cost / query (USD) |
 |---|---|---|---|---|
 | none | 0.000 | 0.000 | 0 | 0.000000 |
-| flashrank | 2.730 | 4.672 | 0 | 0.000000 |
-| cohere | 1.116 | 3.795 | 0 | 0.000000 |
-| cohere_pro | 1.345 | 6.595 | 0 | 0.000000 |
-| jev_pair | 1.538 | 6.271 | 23115 | 0.000971 |
+| flashrank | 2.791 | 4.688 | 0 | 0.000000 |
+| cohere | 1.057 | 4.096 | 0 | 0.000000 |
+| cohere_pro | 1.333 | 7.087 | 0 | 0.000000 |
+| jev_pair | 1.546 | 6.271 | 23123 | 0.000971 |
 
-Jev pair sequential-sum latency per query: median 19.22s (30 requests/query).
+Jev pair sequential-sum latency per query: median 18.57s (30 requests/query).
 
 ## Jev-specific analyses
 
-**jev_pair**: 0.3% of candidate scores >= 0.99, 10.3% <= 0.01; top score tied within a query in 12.3% of queries (ties broken by RRF rank).
+**jev_pair**: 0.4% of candidate scores >= 0.99, 9.7% <= 0.01; top score tied within a query in 11.2% of queries (ties broken by RRF rank).
 
 Calibration of P(yes) against 'chunk contains gold quote' (ECE 0.080; label noise caveat: other chunks may also answer):
 
@@ -88,6 +90,8 @@ Calibration of P(yes) against 'chunk contains gold quote' (ECE 0.080; label nois
 - jev_pair scoring variant `relevant`: nDCG@10 91.0 [87.2, 94.6] (n=83)
 - jev_pair scoring variant `mean`: nDCG@10 93.2 [89.9, 96.2] (n=83)
 
+Run-to-run stability: not run (no repeated-request results found).
+
 ## Answerability gate (AUROC: answerable vs unanswerable)
 
-**Not run.** The gate needs extra Jev calls and the OpenRouter account ran out of credits; the Jev probes (run-to-run stability, candidate-order sensitivity) were skipped for the same reason, and `jev_pack` covers only 56 of the 107 test questions. Conclusions about Jev as a gate are therefore untested here.
+**Not run.** No gate results were found in `results/gate/` for these questions, so this report makes no claim about Jev as an answerability gate.

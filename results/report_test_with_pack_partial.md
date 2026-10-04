@@ -2,6 +2,8 @@
 
 Questions: 56 (46 answerable, 10 unanswerable). Model: `typesafe/jev-1.13`; candidates per question: 30.
 
+Questions scored per reranker (of 107 in this split): none 107, flashrank 107, cohere 107, cohere_pro 107, jev_pair 107, jev_pack 56. Every table below compares only the 56 questions that all of them have scored.
+
 ## Candidate recall@30 (ceiling for all rerankers)
 
 Gold chunk present in the candidate list for **93.5%** of answerable questions (43/46).
@@ -65,17 +67,17 @@ Jev pair latency is the slowest single request (all pair calls assumed concurren
 | reranker | p50 latency (s) | p95 latency (s) | mean input tokens | mean cost / query (USD) |
 |---|---|---|---|---|
 | none | 0.000 | 0.000 | 0 | 0.000000 |
-| flashrank | 2.531 | 3.284 | 0 | 0.000000 |
-| cohere | 1.220 | 4.215 | 0 | 0.000000 |
-| cohere_pro | 1.564 | 7.416 | 0 | 0.000000 |
-| jev_pair | 1.546 | 2.709 | 23648 | 0.000993 |
-| jev_pack | 0.741 | 1.287 | 13730 | 0.000577 |
+| flashrank | 2.531 | 3.263 | 0 | 0.000000 |
+| cohere | 1.184 | 5.276 | 0 | 0.000000 |
+| cohere_pro | 1.516 | 9.905 | 0 | 0.000000 |
+| jev_pair | 1.574 | 4.747 | 23732 | 0.000997 |
+| jev_pack | 0.765 | 1.520 | 13793 | 0.000579 |
 
-Jev pair sequential-sum latency per query: median 19.22s (30 requests/query).
+Jev pair sequential-sum latency per query: median 19.40s (30 requests/query).
 
 ## Jev-specific analyses
 
-**jev_pair**: 0.3% of candidate scores >= 0.99, 10.3% <= 0.01; top score tied within a query in 12.3% of queries (ties broken by RRF rank).
+**jev_pair**: 0.4% of candidate scores >= 0.99, 10.3% <= 0.01; top score tied within a query in 17.9% of queries (ties broken by RRF rank).
 
 Calibration of P(yes) against 'chunk contains gold quote' (ECE 0.081; label noise caveat: other chunks may also answer):
 
@@ -92,7 +94,7 @@ Calibration of P(yes) against 'chunk contains gold quote' (ECE 0.081; label nois
 | 0.84 | 0.263 | 19 |
 | 0.97 | 0.788 | 52 |
 
-**jev_pack**: 0.1% of candidate scores >= 0.99, 1.1% <= 0.01; top score tied within a query in 9.2% of queries (ties broken by RRF rank).
+**jev_pack**: 0.1% of candidate scores >= 0.99, 0.9% <= 0.01; top score tied within a query in 8.9% of queries (ties broken by RRF rank).
 
 Calibration of P(yes) against 'chunk contains gold quote' (ECE 0.068; label noise caveat: other chunks may also answer):
 
@@ -113,8 +115,12 @@ Calibration of P(yes) against 'chunk contains gold quote' (ECE 0.068; label nois
 - jev_pair scoring variant `relevant`: nDCG@10 90.1 [84.7, 95.3] (n=43)
 - jev_pair scoring variant `mean`: nDCG@10 92.1 [87.6, 96.5] (n=43)
 
+Candidate-order sensitivity: not run (no shuffled-order results found).
+
+Run-to-run stability: not run (no repeated-request results found).
+
 Pair vs packed agreement: mean Spearman 0.745 over 55 queries.
 
 ## Answerability gate (AUROC: answerable vs unanswerable)
 
-**Not run.** The gate needs extra Jev calls and the OpenRouter account ran out of credits; the Jev probes (run-to-run stability, candidate-order sensitivity) were skipped for the same reason, and `jev_pack` covers only 56 of the 107 test questions. Conclusions about Jev as a gate are therefore untested here.
+**Not run.** No gate results were found in `results/gate/` for these questions, so this report makes no claim about Jev as an answerability gate.
