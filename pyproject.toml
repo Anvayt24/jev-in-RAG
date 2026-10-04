@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Anvayt24/jev"
+Repository = "https://github.com/Anvayt24/jev-in-RAG"
 
 [dependency-groups]
 dev = [

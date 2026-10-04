@@ -1,6 +1,6 @@
 # jevbench: can a typed decision model rerank for RAG?
 
-[![CI](https://github.com/Anvayt24/jev/actions/workflows/ci.yml/badge.svg)](https://github.com/Anvayt24/jev/actions/workflows/ci.yml)
+[![CI](https://github.com/Anvayt24/jev-in-RAG/actions/workflows/ci.yml/badge.svg)](https://github.com/Anvayt24/jev-in-RAG/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)
 

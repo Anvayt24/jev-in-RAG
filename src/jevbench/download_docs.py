@@ -21,7 +21,7 @@ from pathlib import Path
 
 from . import config
 
-USER_AGENT = "Mozilla/5.0 (compatible; jevbench/0.1; +https://github.com/Anvayt24/jev)"
+USER_AGENT = "Mozilla/5.0 (compatible; jevbench/0.1; +https://github.com/Anvayt24/jev-in-RAG)"
 
 
 @dataclass(frozen=True)
