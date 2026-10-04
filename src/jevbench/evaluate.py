@@ -21,7 +21,7 @@ from . import config, metrics
 from .gate import load_gate
 from .labels import label_question, load_questions
 from .rerankers.base import order_by_scores
-from .retrieve import load_candidates, load_chunks
+from .retrieve import candidates_hash, load_candidates, load_chunks
 from .run_rerank import load_done
 
 RERANKERS = ["none", "flashrank", "cohere", "cohere_pro", "jev_pair", "jev_pack"]
@@ -199,12 +199,18 @@ class Evaluation:
         return overall, by_type
 
     def candidate_mismatches(self) -> list[str]:
-        """qids for which two rerankers were given different candidate lists."""
+        """qids whose stored scores were not all computed on the candidate list frozen now.
+
+        A mismatch means two rerankers saw different candidates, or the frozen candidates changed
+        (for example after re-ingesting a revised document) since the scores were stored.
+        """
         hashes: dict[str, set[str]] = defaultdict(set)
         for records in self.results.values():
             for qid, record in records.items():
                 hashes[qid].add(record["cand_hash"])
-        return [qid for qid, seen in hashes.items() if len(seen) > 1]
+        for qid, candidates in self.candidates.items():
+            hashes[qid].add(candidates_hash(candidates))
+        return sorted(qid for qid, seen in hashes.items() if len(seen) > 1)
 
 
 # --- report sections: each returns markdown lines --------------------------------------------
@@ -235,7 +241,7 @@ def section_candidate_recall(ev: Evaluation) -> list[str]:
         lines.append("There are no answerable questions to compare.\n")
     bad = ev.candidate_mismatches()
     verdict = (
-        "OK, every reranker saw byte-identical candidates"
+        "OK, every reranker was scored on byte-identical candidates that match the frozen lists"
         if not bad
         else "MISMATCH on " + ", ".join(bad)
     )

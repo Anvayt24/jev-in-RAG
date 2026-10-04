@@ -1,10 +1,11 @@
 """Report statistics and the generated report, checked against hand-computed values."""
 
+import json
 import math
 
 import pytest
 
-from jevbench import evaluate, run_rerank
+from jevbench import config, evaluate, run_rerank
 from jevbench.evaluate import (
     Evaluation,
     argmax,
@@ -121,6 +122,22 @@ def test_a_reranker_given_different_candidates_is_flagged(scored):
     report = build_report(Evaluation.load("test", ["none", "flashrank"]))
     assert "MISMATCH on" in report
     assert "byte-identical" not in report
+
+
+def test_consistent_data_passes_the_integrity_check(scored):
+    ev = Evaluation.load("test", ["none", "flashrank"])
+    assert ev.candidate_mismatches() == []
+    assert "OK, every reranker was scored on byte-identical candidates" in build_report(ev)
+
+
+def test_candidates_changed_after_scoring_are_flagged(scored):
+    path = config.CAND_DIR / "q1.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["candidates"][0]["text"] += " (the document was revised)"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    ev = Evaluation.load("test", ["none", "flashrank"])
+    assert ev.candidate_mismatches() == ["q1"]
+    assert "MISMATCH on q1" in build_report(ev)
 
 
 def test_report_says_when_the_gate_and_probes_were_not_run(scored):
