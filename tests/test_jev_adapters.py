@@ -80,7 +80,7 @@ def test_pack_single_request_maps_scores_back():
     cands = _cands(5)
     res = JevPack(use_cache=False, client_factory=lambda: FakeClient(log)).rerank("q", cands)
     assert len(log) == 1
-    state, questions = log[0]
+    _, questions = log[0]
     assert list(questions) == [f"C{i}" for i in range(1, 6)]
     assert res.scores == [_p("evidence" + c["text"]) for c in cands]
 

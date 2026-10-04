@@ -2,8 +2,8 @@ import math
 
 from jevbench import metrics
 from jevbench.labels import label_question, normalize
-from jevbench.retrieve import candidates_hash, rrf_fuse
 from jevbench.rerankers.base import order_by_scores
+from jevbench.retrieve import candidates_hash, rrf_fuse
 
 
 def test_rrf_fuse_prefers_items_ranked_high_in_both_lists():

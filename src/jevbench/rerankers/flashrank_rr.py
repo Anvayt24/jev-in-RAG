@@ -1,3 +1,5 @@
+"""FlashRank: a small ONNX cross-encoder that runs on CPU with no API key."""
+
 import time
 
 from .base import Reranker, RerankResult

@@ -1,5 +1,5 @@
-"""Merge per-document question files into data/eval/questions.jsonl, validate gold quotes against
-the real chunks, and assign a deterministic dev/test split (dev ~30%, used only to tune Jev wording).
+"""Merge per-document question files into data/eval/questions.jsonl, validate every gold quote
+against the real chunks, and assign a deterministic dev/test split (dev ~30%, kept for tuning).
 
   uv run python -m jevbench.build_eval
 """

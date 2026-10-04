@@ -1,4 +1,4 @@
-"""Answerability gate: for each reranker's top-k passages ask Jev 'can the query be answered from these?'.
+"""Answerability gate: ask Jev whether the query can be answered from each reranker's top-k.
 
   uv run python -m jevbench.gate --rerankers flashrank cohere cohere_pro jev_pair --split test
 

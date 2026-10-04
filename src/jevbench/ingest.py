@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -73,7 +72,7 @@ def _tail_tokens(text: str, tok_len, n_tokens: int) -> str:
     words = text.split()
     tail: list[str] = []
     for w in reversed(words):
-        if tok_len(" ".join([w] + tail)) > n_tokens:
+        if tok_len(" ".join([w, *tail])) > n_tokens:
             break
         tail.insert(0, w)
     return " ".join(tail)
@@ -102,8 +101,8 @@ def chunk_document(doc_id: str, pages: list[dict], tok_len) -> list[dict]:
 
 
 def build() -> None:
-    from sentence_transformers import SentenceTransformer
     import faiss
+    from sentence_transformers import SentenceTransformer
 
     tok = _get_tokenizer()
     tok_len = lambda s: len(tok.encode(s, add_special_tokens=False))  # noqa: E731
@@ -121,7 +120,8 @@ def build() -> None:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
     lens = [tok_len(c["text"]) for c in all_chunks]
     print(
-        f"total chunks: {len(all_chunks)}  tokens/chunk: median={int(np.median(lens))} max={max(lens)}",
+        f"total chunks: {len(all_chunks)}  "
+        f"tokens/chunk: median={int(np.median(lens))} max={max(lens)}",
         flush=True,
     )
 
@@ -146,4 +146,3 @@ def bm25_tokens(text: str) -> list[str]:
 
 if __name__ == "__main__":
     build()
-    sys.exit(0)

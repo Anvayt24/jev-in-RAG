@@ -1,3 +1,6 @@
+"""Cohere Rerank 4 (fast or pro) behind the common reranker interface."""
+
+import contextlib
 import os
 import time
 
@@ -5,7 +8,7 @@ from .base import Reranker, RerankResult
 
 
 class CohereReranker(Reranker):
-    """Strong hosted reranker: Cohere Rerank 4 (fast or pro)."""
+    """Hosted cross-encoder reranker. Calls are paced and retried for trial-key rate limits."""
 
     name = "cohere"
 
@@ -46,10 +49,8 @@ class CohereReranker(Reranker):
             for r in resp.results:
                 scores[r.index] = float(r.relevance_score)
             units = None
-            try:
+            with contextlib.suppress(AttributeError):
                 units = resp.meta.billed_units.search_units
-            except AttributeError:
-                pass
             return RerankResult(
                 scores=scores,
                 latency_s=dt,

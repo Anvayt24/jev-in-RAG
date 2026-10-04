@@ -1,4 +1,4 @@
-"""Write data/eval/spot_check.md: 20 seeded-random questions with their gold evidence for human review."""
+"""Write data/eval/spot_check.md: 20 random questions with their gold evidence, for review."""
 
 import random
 
@@ -30,7 +30,7 @@ for i, q in enumerate(picked, start=1):
     if not q["answerable"]:
         out.append("**Expected: unanswerable** (no gold evidence)\n")
         continue
-    for g, ids in zip(q["gold"], lab["per_quote"]):
+    for g, ids in zip(q["gold"], lab["per_quote"], strict=True):
         out.append(f"- **Gold quote** ({g['doc_id']}): `{g['quote']}`")
         for cid in ids[:2]:
             c = chunks[cid]

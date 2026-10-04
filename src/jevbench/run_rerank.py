@@ -1,4 +1,6 @@
-"""Score the frozen candidate lists with each reranker. Resumable: finished (reranker, qid) pairs are skipped.
+"""Score the frozen candidate lists with each reranker.
+
+Resumable: (reranker, question) pairs that already have a result are skipped.
 
 uv run python -m jevbench.run_rerank --rerankers none flashrank --split dev
 """

@@ -1,3 +1,5 @@
+"""Baseline that applies no reranking."""
+
 from .base import Reranker, RerankResult
 
 

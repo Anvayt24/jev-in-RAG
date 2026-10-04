@@ -1,11 +1,12 @@
 """Jev as a reranker, reached through OpenRouter with the official typesafe-sdk.
 
-Two modes (see plan):
-  * JevPair  - one request per (query, passage); the vendor cookbook's reranking recipe.
-  * JevPack  - one request per query; one noul question per candidate (the article's method).
+Two modes:
+  * JevPair  - one request per (query, passage), the recipe in the vendor's reranking cookbook.
+  * JevPack  - one request per query, with one yes/no ("noul") question per candidate.
 Plus `jev_answerable` for the "can the retained passages answer this?" gate.
 
-Every raw response is cached under cache/jev_raw/ keyed by (mode, model, wording, inputs, cache_tag).
+Every raw response is cached under cache/jev_raw/, keyed by mode, model, question wording,
+inputs and an optional cache_tag (the tag lets the stability probes make fresh requests).
 """
 
 from __future__ import annotations
@@ -97,7 +98,8 @@ class JevPair(Reranker):
         use_cache: bool = True,
         client_factory=make_async_client,
     ) -> None:
-        assert variant in ("evidence", "relevant", "mean")
+        if variant not in ("evidence", "relevant", "mean"):
+            raise ValueError(f"unknown scoring variant: {variant!r}")
         self.variant = variant
         self.concurrency = concurrency
         self.cache_tag = cache_tag
@@ -129,7 +131,7 @@ class JevPair(Reranker):
         wall = time.perf_counter() - t0
         ev = [o["noul"]["evidence"] for o in outs]
         rel = [o["noul"]["relevant"] for o in outs]
-        mean = [(a + b) / 2 for a, b in zip(ev, rel)]
+        mean = [(a + b) / 2 for a, b in zip(ev, rel, strict=True)]
         scores = {"evidence": ev, "relevant": rel, "mean": mean}[self.variant]
         return RerankResult(
             scores=scores,
@@ -173,7 +175,7 @@ class JevPack(Reranker):
 
             async def one(batch: list[int]) -> dict:
                 ids = [f"C{n + 1}" for n in range(len(batch))]
-                passages = {pid: candidates[i]["text"] for pid, i in zip(ids, batch)}
+                passages = {pid: candidates[i]["text"] for pid, i in zip(ids, batch, strict=True)}
                 key = _key(
                     "pack",
                     config.JEV_MODEL,
@@ -189,7 +191,7 @@ class JevPack(Reranker):
                     )
                     self.cache.put(key, hit)
                 hit = dict(hit)
-                hit["mapping"] = {pid: i for pid, i in zip(ids, batch)}
+                hit["mapping"] = dict(zip(ids, batch, strict=True))
                 return hit
 
             return await asyncio.gather(*(one(b) for b in batches))

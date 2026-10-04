@@ -85,8 +85,9 @@ def paired_bootstrap_diff(
     a: list[float], b: list[float], n_boot: int = 2000, seed: int = 0
 ) -> tuple[float, float, float]:
     """Mean of (a - b) with a 95% bootstrap CI; pairs are resampled together."""
-    assert len(a) == len(b)
-    return bootstrap_ci([x - y for x, y in zip(a, b)], n_boot=n_boot, seed=seed)
+    if len(a) != len(b):
+        raise ValueError("paired samples must have the same length")
+    return bootstrap_ci([x - y for x, y in zip(a, b, strict=True)], n_boot=n_boot, seed=seed)
 
 
 def auroc(pos: list[float], neg: list[float]) -> float:

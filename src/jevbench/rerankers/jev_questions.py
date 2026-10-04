@@ -6,8 +6,13 @@ from __future__ import annotations
 WORDING_VERSION = "v1"
 
 EVIDENCE_CRITERIA = {
-    "true": "The passage states the specific facts, numbers, or definitions needed to answer the query.",
-    "false": "The passage does not state what is needed to answer the query, even if it covers a related topic.",
+    "true": (
+        "The passage states the specific facts, numbers, or definitions needed to answer the query."
+    ),
+    "false": (
+        "The passage does not state what is needed to answer the query, "
+        "even if it covers a related topic."
+    ),
 }
 RELEVANT_CRITERIA = {
     "true": "The passage discusses the specific subject the query asks about.",
@@ -46,7 +51,9 @@ def pack_questions(ids: list[str]) -> dict:
     return {
         pid: {
             "type": "noul",
-            "instructions": f"Does `passages.{pid}` contain information that directly answers `query`?",
+            "instructions": (
+                f"Does `passages.{pid}` contain information that directly answers `query`?"
+            ),
             "criteria": EVIDENCE_CRITERIA,
         }
         for pid in ids
