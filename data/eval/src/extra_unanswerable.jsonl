@@ -1,0 +1,8 @@
+{"qid":"un-01","question":"What is the maximum SPI clock frequency in MHz supported by the Raspberry Pi Pico?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
+{"qid":"un-02","question":"What memory bandwidth in GB/s does the RP2040 bus fabric deliver?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
+{"qid":"un-03","question":"How much revenue did Dairy Queen generate for Berkshire in 2023?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
+{"qid":"un-04","question":"What is the current share price of Berkshire Hathaway Class A stock on the NYSE?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
+{"qid":"un-05","question":"Which clause of ISO/IEC 42001 does the AI RMF map its GOVERN function to?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
+{"qid":"un-06","question":"How many human annotators validated the distractor documents in the position-bias experiments?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
+{"qid":"un-07","question":"What score did the RAG models get on the HotpotQA multi-hop benchmark?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
+{"qid":"un-08","question":"What accuracy did Self-RAG reach on the GSM8K grade-school math benchmark?","type":"unanswerable","answerable":false,"mode":"any","gold":[]}
