@@ -140,6 +140,17 @@ def test_candidates_changed_after_scoring_are_flagged(scored):
     assert "MISMATCH on q1" in build_report(ev)
 
 
+def test_probe_sections_appear_once_probe_results_exist(corpus):
+    names = ["jev_pair", "jev_pack", "jev_pair_rerun", "jev_pack_shuffled"]
+    run_rerank.run(names, split="test", limit=None, make=lambda name: KeywordReranker())
+    report = build_report(Evaluation.load("test", ["jev_pair", "jev_pack"]))
+    # a deterministic stand-in scores identically every time, so nothing may move
+    assert "Run-to-run stability (jev_pair, identical inputs, n=3): mean |delta P| 0.0000" in report
+    assert "mean Spearman 1.000; same top-1 candidate in 100.0% of queries" in report
+    assert "Pair vs packed agreement: mean Spearman 1.000 over 3 queries" in report
+    assert "not run" not in report.split("## Jev-specific analyses")[1].split("## Answerability")[0]
+
+
 def test_report_says_when_the_gate_and_probes_were_not_run(scored):
     report = build_report(Evaluation.load("test", ["none", "flashrank"]))
     assert "**Not run.**" in report
