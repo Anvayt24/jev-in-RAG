@@ -36,7 +36,11 @@ def _get_tokenizer():
 
 
 def split_text(text: str, tok_len, size: int) -> list[str]:
-    """Recursive splitter: paragraphs -> lines -> sentences -> words, merged up to `size` tokens."""
+    """Recursive splitter: paragraphs -> lines -> sentences -> words, merged up to `size` tokens.
+
+    Known quirk, kept so published results stay reproducible: when a split lands on a ". "
+    boundary the separator is consumed, so that chunk ends without its final period.
+    """
 
     def rec(t: str, seps: list[str]) -> list[str]:
         if tok_len(t) <= size:
