@@ -1,5 +1,6 @@
 """Frozen Jev question wording. Tuned on the dev split only; bump WORDING_VERSION on any change
 (the version is part of every cache key so old responses are never reused for new wording)."""
+
 from __future__ import annotations
 
 WORDING_VERSION = "v1"

@@ -1,4 +1,5 @@
 """Jev adapters against a fake async client (no network)."""
+
 import hashlib
 from types import SimpleNamespace
 
@@ -34,8 +35,10 @@ class FakeClient:
                 answers[pid] = SimpleNamespace(noul=_p("evidence" + state["passages"][pid]))
         raw = SimpleNamespace(json=lambda: {"usage": {"cost": 1e-5}})
         return SimpleNamespace(
-            answers=answers, model="typesafe/jev-1.13-test",
-            usage=SimpleNamespace(input_tokens=100, output_tokens=5), raw_http_response=raw,
+            answers=answers,
+            model="typesafe/jev-1.13-test",
+            usage=SimpleNamespace(input_tokens=100, output_tokens=5),
+            raw_http_response=raw,
         )
 
 
@@ -62,9 +65,13 @@ def test_pair_scores_align_with_candidates_and_record_cost():
 def test_pair_variant_selection():
     log = []
     cands = _cands(3)
-    rel = JevPair(variant="relevant", use_cache=False, client_factory=lambda: FakeClient(log)).rerank("q", cands)
+    rel = JevPair(
+        variant="relevant", use_cache=False, client_factory=lambda: FakeClient(log)
+    ).rerank("q", cands)
     assert rel.scores == rel.meta["variants"]["relevant"]
-    mean = JevPair(variant="mean", use_cache=False, client_factory=lambda: FakeClient(log)).rerank("q", cands)
+    mean = JevPair(variant="mean", use_cache=False, client_factory=lambda: FakeClient(log)).rerank(
+        "q", cands
+    )
     assert mean.scores == mean.meta["variants"]["mean"]
 
 
@@ -81,7 +88,9 @@ def test_pack_single_request_maps_scores_back():
 def test_pack_shuffle_changes_order_in_request_but_not_score_alignment():
     log = []
     cands = _cands(8)
-    res = JevPack(shuffle_seed=3, use_cache=False, client_factory=lambda: FakeClient(log)).rerank("q", cands)
+    res = JevPack(shuffle_seed=3, use_cache=False, client_factory=lambda: FakeClient(log)).rerank(
+        "q", cands
+    )
     state, _ = log[0]
     sent = [state["passages"][f"C{i}"] for i in range(1, 9)]
     assert sent != [c["text"] for c in cands]  # order actually shuffled
@@ -92,7 +101,9 @@ def test_pack_shuffle_changes_order_in_request_but_not_score_alignment():
 def test_pack_batches():
     log = []
     cands = _cands(7)
-    res = JevPack(batch_size=3, use_cache=False, client_factory=lambda: FakeClient(log)).rerank("q", cands)
+    res = JevPack(batch_size=3, use_cache=False, client_factory=lambda: FakeClient(log)).rerank(
+        "q", cands
+    )
     assert len(log) == 3 and res.meta["n_requests"] == 3
     assert res.scores == [_p("evidence" + c["text"]) for c in cands]
 

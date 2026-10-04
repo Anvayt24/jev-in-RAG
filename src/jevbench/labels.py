@@ -1,4 +1,5 @@
 """Map gold evidence quotes to the chunk ids that contain them (robust to re-chunking)."""
+
 from __future__ import annotations
 
 import json
@@ -14,7 +15,9 @@ def normalize(text: str) -> str:
 
 def load_questions(split: str | None = None) -> list[dict]:
     path = config.EVAL_DIR / "questions.jsonl"
-    qs = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    qs = [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
     return [q for q in qs if split is None or q["split"] == split]
 
 

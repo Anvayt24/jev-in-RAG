@@ -32,7 +32,9 @@ class CohereReranker(Reranker):
             t0 = time.perf_counter()
             self._last_call = time.monotonic()
             try:
-                resp = self.client.rerank(model=self.model, query=query, documents=docs, top_n=len(docs))
+                resp = self.client.rerank(
+                    model=self.model, query=query, documents=docs, top_n=len(docs)
+                )
             except Exception as e:  # rate limit / transient
                 status = getattr(e, "status_code", None)
                 if status in (429, 500, 502, 503, 504) and attempt < self.max_retries - 1:

@@ -1,7 +1,8 @@
 """Score the frozen candidate lists with each reranker. Resumable: finished (reranker, qid) pairs are skipped.
 
-  uv run python -m jevbench.run_rerank --rerankers none flashrank --split dev
+uv run python -m jevbench.run_rerank --rerankers none flashrank --split dev
 """
+
 from __future__ import annotations
 
 import argparse
@@ -17,27 +18,35 @@ from .retrieve import load_candidates
 def make_reranker(name: str):
     if name == "none":
         from .rerankers.none import NoRerank
+
         return NoRerank()
     if name == "flashrank":
         from .rerankers.flashrank_rr import FlashRankReranker
+
         return FlashRankReranker()
     if name == "cohere":
         from .rerankers.cohere_rr import CohereReranker
+
         return CohereReranker()
     if name == "cohere_pro":
         from .rerankers.cohere_rr import CohereReranker
+
         return CohereReranker(model="rerank-v4.0-pro")
     if name == "jev_pair":
         from .rerankers.jev_rr import JevPair
+
         return JevPair()
     if name == "jev_pack":
         from .rerankers.jev_rr import JevPack
+
         return JevPack()
     if name == "jev_pack_shuffled":  # order-sensitivity probe
         from .rerankers.jev_rr import JevPack
+
         return JevPack(shuffle_seed=1, cache_tag="shuf1")
     if name == "jev_pair_rerun":  # run-to-run stability probe
         from .rerankers.jev_rr import JevPair
+
         return JevPair(cache_tag="rerun1")
     raise ValueError(f"unknown reranker {name}")
 

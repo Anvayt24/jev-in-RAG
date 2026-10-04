@@ -3,6 +3,7 @@ the real chunks, and assign a deterministic dev/test split (dev ~30%, used only 
 
   uv run python -m jevbench.build_eval
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -46,12 +47,14 @@ def main() -> int:
         q.pop("_src", None)
 
     out = config.EVAL_DIR / "questions.jsonl"
-    out.write_text("\n".join(json.dumps(q, ensure_ascii=False) for q in questions) + "\n", encoding="utf-8")
+    out.write_text(
+        "\n".join(json.dumps(q, ensure_ascii=False) for q in questions) + "\n", encoding="utf-8"
+    )
 
     print(f"{len(questions)} questions -> {out}")
     by = Counter((q["split"], q["type"]) for q in questions)
     for split in ("dev", "test"):
-        row = {t: by[(split, t)] for t in sorted({q['type'] for q in questions})}
+        row = {t: by[(split, t)] for t in sorted({q["type"] for q in questions})}
         print(f"  {split}: {sum(row.values())}  {row}")
     print(f"  quotes landing in >1 chunk (chunk overlap): {multi_chunk}")
     if problems:

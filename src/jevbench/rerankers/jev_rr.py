@@ -7,6 +7,7 @@ Plus `jev_answerable` for the "can the retained passages answer this?" gate.
 
 Every raw response is cached under cache/jev_raw/ keyed by (mode, model, wording, inputs, cache_tag).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -50,7 +51,10 @@ def make_async_client(api_key: str | None = None):
         base_url=config.JEV_BASE_URL,
         model=config.JEV_MODEL,
         retry=RetryPolicy(
-            max_retries=6, backoff_initial=1.0, backoff_max=30.0, timeout=120.0,
+            max_retries=6,
+            backoff_initial=1.0,
+            backoff_max=30.0,
+            timeout=120.0,
             http_statuses={429, 500, 502, 503, 504, 529},
         ),
     )
@@ -85,8 +89,14 @@ class JevPair(Reranker):
 
     name = "jev_pair"
 
-    def __init__(self, variant: str = "evidence", concurrency: int = 8, cache_tag: str = "",
-                 use_cache: bool = True, client_factory=make_async_client) -> None:
+    def __init__(
+        self,
+        variant: str = "evidence",
+        concurrency: int = 8,
+        cache_tag: str = "",
+        use_cache: bool = True,
+        client_factory=make_async_client,
+    ) -> None:
         assert variant in ("evidence", "relevant", "mean")
         self.variant = variant
         self.concurrency = concurrency
@@ -100,7 +110,9 @@ class JevPair(Reranker):
         async with self.client_factory() as client:
 
             async def one(c: dict) -> dict:
-                key = _key("pair", config.JEV_MODEL, jq.WORDING_VERSION, query, c["text"], self.cache_tag)
+                key = _key(
+                    "pair", config.JEV_MODEL, jq.WORDING_VERSION, query, c["text"], self.cache_tag
+                )
                 hit = self.cache.get(key)
                 if hit is not None:
                     return hit
@@ -140,8 +152,14 @@ class JevPack(Reranker):
 
     name = "jev_pack"
 
-    def __init__(self, batch_size: int | None = None, shuffle_seed: int | None = None,
-                 cache_tag: str = "", use_cache: bool = True, client_factory=make_async_client) -> None:
+    def __init__(
+        self,
+        batch_size: int | None = None,
+        shuffle_seed: int | None = None,
+        cache_tag: str = "",
+        use_cache: bool = True,
+        client_factory=make_async_client,
+    ) -> None:
         self.batch_size = batch_size  # None = all candidates in one request
         self.shuffle_seed = shuffle_seed
         self.cache_tag = cache_tag
@@ -156,11 +174,19 @@ class JevPack(Reranker):
             async def one(batch: list[int]) -> dict:
                 ids = [f"C{n + 1}" for n in range(len(batch))]
                 passages = {pid: candidates[i]["text"] for pid, i in zip(ids, batch)}
-                key = _key("pack", config.JEV_MODEL, jq.WORDING_VERSION, query,
-                           "|".join(candidates[i]["chunk_id"] for i in batch), self.cache_tag)
+                key = _key(
+                    "pack",
+                    config.JEV_MODEL,
+                    jq.WORDING_VERSION,
+                    query,
+                    "|".join(candidates[i]["chunk_id"] for i in batch),
+                    self.cache_tag,
+                )
                 hit = self.cache.get(key)
                 if hit is None:
-                    hit = await _call(client, jq.pack_state(query, passages), jq.pack_questions(ids))
+                    hit = await _call(
+                        client, jq.pack_state(query, passages), jq.pack_questions(ids)
+                    )
                     self.cache.put(key, hit)
                 hit = dict(hit)
                 hit["mapping"] = {pid: i for pid, i in zip(ids, batch)}
@@ -186,11 +212,18 @@ class JevPack(Reranker):
         )
 
 
-def jev_answerable(query: str, passages: list[str], cache_tag: str = "", use_cache: bool = True,
-                   client_factory=make_async_client) -> dict:
+def jev_answerable(
+    query: str,
+    passages: list[str],
+    cache_tag: str = "",
+    use_cache: bool = True,
+    client_factory=make_async_client,
+) -> dict:
     """P(query is answerable from the given passages) -> {'p', 'cost', 'tokens', 'latency_s'}."""
     cache = _Cache("answerable", use_cache)
-    key = _key("answerable", config.JEV_MODEL, jq.WORDING_VERSION, query, "\x1e".join(passages), cache_tag)
+    key = _key(
+        "answerable", config.JEV_MODEL, jq.WORDING_VERSION, query, "\x1e".join(passages), cache_tag
+    )
     hit = cache.get(key)
     if hit is not None:
         return hit

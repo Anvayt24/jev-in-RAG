@@ -1,4 +1,5 @@
 """Parse PDFs -> markdown pages -> chunks -> dense (FAISS) + sparse (BM25) indexes."""
+
 from __future__ import annotations
 
 import json
@@ -119,7 +120,10 @@ def build() -> None:
         for c in all_chunks:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
     lens = [tok_len(c["text"]) for c in all_chunks]
-    print(f"total chunks: {len(all_chunks)}  tokens/chunk: median={int(np.median(lens))} max={max(lens)}", flush=True)
+    print(
+        f"total chunks: {len(all_chunks)}  tokens/chunk: median={int(np.median(lens))} max={max(lens)}",
+        flush=True,
+    )
 
     model = SentenceTransformer(config.EMBED_MODEL, device="cpu")
     emb = model.encode(

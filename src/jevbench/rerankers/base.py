@@ -1,4 +1,5 @@
 """Common reranker interface: score candidates for a query; higher = more relevant."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

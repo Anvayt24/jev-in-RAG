@@ -1,4 +1,5 @@
 """Hybrid retrieval (dense + BM25) fused with RRF; candidates are cached once per question."""
+
 from __future__ import annotations
 
 import hashlib
@@ -37,7 +38,9 @@ class HybridRetriever:
         self.model = SentenceTransformer(config.EMBED_MODEL, device="cpu")
 
     def dense_rank(self, query: str, k: int) -> list[int]:
-        q = self.model.encode([config.QUERY_PREFIX + query], normalize_embeddings=True).astype("float32")
+        q = self.model.encode([config.QUERY_PREFIX + query], normalize_embeddings=True).astype(
+            "float32"
+        )
         _, idx = self.index.search(q, k)
         return [int(i) for i in idx[0] if i >= 0]
 

@@ -1,7 +1,8 @@
 """Compute metrics + Jev-specific analyses from results/ and write results/report.md.
 
-  uv run python -m jevbench.evaluate --split test
+uv run python -m jevbench.evaluate --split test
 """
+
 from __future__ import annotations
 
 import argparse
@@ -56,7 +57,9 @@ def spearman(a: list[float], b: list[float]) -> float:
     return num / den if den else float("nan")
 
 
-def calibration(points: list[tuple[float, int]], bins: int = 10) -> tuple[float, list[tuple[float, float, int]]]:
+def calibration(
+    points: list[tuple[float, int]], bins: int = 10
+) -> tuple[float, list[tuple[float, float, int]]]:
     """ECE and reliability rows (mean_pred, frac_pos, n) for (p, label) pairs."""
     rows, ece, n = [], 0.0, len(points)
     for b in range(bins):
@@ -91,8 +94,10 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
     w = out.append
 
     w(f"# Jev reranking benchmark report (split: {split or 'all'})\n")
-    w(f"Questions: {len(questions)} ({len(answerable)} answerable, {len(unanswerable)} unanswerable). "
-      f"Model: `{config.JEV_MODEL}`; candidates per question: {config.N_CANDIDATES}.\n")
+    w(
+        f"Questions: {len(questions)} ({len(answerable)} answerable, {len(unanswerable)} unanswerable). "
+        f"Model: `{config.JEV_MODEL}`; candidates per question: {config.N_CANDIDATES}.\n"
+    )
 
     # --- candidate recall (ceiling for every reranker) ---
     in_cand = []
@@ -100,8 +105,10 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
         cids = {c["chunk_id"] for c in load_candidates(q["qid"])["candidates"]}
         in_cand.append(float(bool(cids & set(labels[q["qid"]]["gold_chunk_ids"]))))
     w(f"## Candidate recall@{config.N_CANDIDATES} (ceiling for all rerankers)\n")
-    w(f"Gold chunk present in the candidate list for **{pct(mean(in_cand))}%** of answerable questions "
-      f"({int(sum(in_cand))}/{len(in_cand)}).\n")
+    w(
+        f"Gold chunk present in the candidate list for **{pct(mean(in_cand))}%** of answerable questions "
+        f"({int(sum(in_cand))}/{len(in_cand)}).\n"
+    )
     addressable = {q["qid"] for q, f in zip(answerable, in_cand) if f}
 
     # --- hash check: identical candidates for every reranker ---
@@ -110,7 +117,9 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
         for qid, r in d.items():
             hashes[qid].add(r["cand_hash"])
     bad = [qid for qid, h in hashes.items() if len(h) > 1]
-    w(f"Candidate-list integrity: {'OK, every reranker saw byte-identical candidates' if not bad else 'MISMATCH on ' + ', '.join(bad)}\n")
+    w(
+        f"Candidate-list integrity: {'OK, every reranker saw byte-identical candidates' if not bad else 'MISMATCH on ' + ', '.join(bad)}\n"
+    )
 
     # --- main ranking table ---
     def collect(name: str, subset: set[str] | None):
@@ -128,7 +137,10 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
                 types[q["type"]][k].append(v)
         return per, types
 
-    for title, subset in (("All answerable questions", None), ("Reranking-addressable subset (gold in candidates)", addressable)):
+    for title, subset in (
+        ("All answerable questions", None),
+        ("Reranking-addressable subset (gold in candidates)", addressable),
+    ):
         w(f"## Ranking quality: {title}\n")
         w("Mean % with 95% bootstrap CI over questions.\n")
         w("| reranker | n | " + " | ".join(KEYS) + " |")
@@ -161,14 +173,27 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
         if not results[n]:
             continue
         _, types = collect(n, addressable)
-        w(f"| {n} | " + " | ".join(f"{pct(mean(types[t]['ndcg@10']))} (n={len(types[t]['ndcg@10'])})" if types[t]["ndcg@10"] else "n/a" for t in all_types) + " |")
+        w(
+            f"| {n} | "
+            + " | ".join(
+                f"{pct(mean(types[t]['ndcg@10']))} (n={len(types[t]['ndcg@10'])})"
+                if types[t]["ndcg@10"]
+                else "n/a"
+                for t in all_types
+            )
+            + " |"
+        )
     w("")
 
     # --- ops ---
     w("## Latency and cost per query\n")
-    w("Jev pair latency is the slowest single request (all pair calls assumed concurrent); "
-      "sequential sum is shown too. Cohere/FlashRank latency is the rerank call only.\n")
-    w("| reranker | p50 latency (s) | p95 latency (s) | mean input tokens | mean cost / query (USD) |")
+    w(
+        "Jev pair latency is the slowest single request (all pair calls assumed concurrent); "
+        "sequential sum is shown too. Cohere/FlashRank latency is the rerank call only.\n"
+    )
+    w(
+        "| reranker | p50 latency (s) | p95 latency (s) | mean input tokens | mean cost / query (USD) |"
+    )
     w("|---|---|---|---|---|")
     for n in MAIN:
         rs = [r for qid, r in results[n].items() if qid in common]
@@ -176,11 +201,17 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
             continue
         lat = sorted(r["latency_s"] for r in rs)
         p95 = lat[min(len(lat) - 1, int(0.95 * len(lat)))]
-        w(f"| {n} | {median(lat):.3f} | {p95:.3f} | {mean(r['input_tokens'] for r in rs):.0f} | {mean(r['cost_usd'] for r in rs):.6f} |")
+        w(
+            f"| {n} | {median(lat):.3f} | {p95:.3f} | {mean(r['input_tokens'] for r in rs):.0f} | {mean(r['cost_usd'] for r in rs):.6f} |"
+        )
     if results["jev_pair"]:
-        seq = [sum(r["meta"].get("per_request_latency_s", [0])) for r in results["jev_pair"].values()]
-        w(f"\nJev pair sequential-sum latency per query: median {median(seq):.2f}s "
-          f"({mean(r['meta'].get('n_requests', 0) for r in results['jev_pair'].values()):.0f} requests/query).")
+        seq = [
+            sum(r["meta"].get("per_request_latency_s", [0])) for r in results["jev_pair"].values()
+        ]
+        w(
+            f"\nJev pair sequential-sum latency per query: median {median(seq):.2f}s "
+            f"({mean(r['meta'].get('n_requests', 0) for r in results['jev_pair'].values()):.0f} requests/query)."
+        )
     w("")
 
     # --- Jev-specific ---
@@ -196,8 +227,10 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
         for r in rs.values():
             top = max(r["scores"])
             ties.append(float(sum(1 for s in r["scores"] if abs(s - top) < 1e-9) > 1))
-        w(f"**{n}**: {pct(sat_hi)}% of candidate scores >= 0.99, {pct(sat_lo)}% <= 0.01; "
-          f"top score tied within a query in {pct(mean(ties))}% of queries (ties broken by RRF rank).")
+        w(
+            f"**{n}**: {pct(sat_hi)}% of candidate scores >= 0.99, {pct(sat_lo)}% <= 0.01; "
+            f"top score tied within a query in {pct(mean(ties))}% of queries (ties broken by RRF rank)."
+        )
         pts = []
         for q in answerable:
             r = rs.get(q["qid"])
@@ -207,7 +240,9 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
             pts += [(s, int(cid in gold)) for s, cid in zip(r["scores"], r["chunk_ids"])]
         if pts:
             ece, rows = calibration(pts)
-            w(f"\nCalibration of P(yes) against 'chunk contains gold quote' (ECE {ece:.3f}; label noise caveat: other chunks may also answer):\n")
+            w(
+                f"\nCalibration of P(yes) against 'chunk contains gold quote' (ECE {ece:.3f}; label noise caveat: other chunks may also answer):\n"
+            )
             w("| mean P(yes) | fraction gold | n |")
             w("|---|---|---|")
             for mp, fp, c in rows:
@@ -223,29 +258,60 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
             cand = load_candidates(q["qid"])["candidates"]
             tmp = dict(r, scores=r["meta"]["variants"][variant])
             lab = labels[q["qid"]]
-            per.append(metrics.question_metrics(ranked_ids(tmp, cand), lab["per_quote"], lab["mode"])["ndcg@10"])
+            per.append(
+                metrics.question_metrics(ranked_ids(tmp, cand), lab["per_quote"], lab["mode"])[
+                    "ndcg@10"
+                ]
+            )
         if per:
             w(f"- jev_pair scoring variant `{variant}`: nDCG@10 {ci_str(per)} (n={len(per)})")
     w("")
 
     if extra["jev_pack_shuffled"] and results["jev_pack"]:
-        rho = [spearman(results["jev_pack"][qid]["scores"], r["scores"])
-               for qid, r in extra["jev_pack_shuffled"].items() if qid in results["jev_pack"]]
-        same_top = [float(max(range(30), key=lambda i: results["jev_pack"][qid]["scores"][i]) ==
-                          max(range(30), key=lambda i: r["scores"][i]))
-                    for qid, r in extra["jev_pack_shuffled"].items() if qid in results["jev_pack"]]
-        w(f"Candidate-order sensitivity (jev_pack, original vs shuffled order, n={len(rho)}): "
-          f"mean Spearman {mean(rho):.3f}; same top-1 candidate in {pct(mean(same_top))}% of queries.\n")
+        rho = [
+            spearman(results["jev_pack"][qid]["scores"], r["scores"])
+            for qid, r in extra["jev_pack_shuffled"].items()
+            if qid in results["jev_pack"]
+        ]
+        same_top = [
+            float(
+                max(range(30), key=lambda i: results["jev_pack"][qid]["scores"][i])
+                == max(range(30), key=lambda i: r["scores"][i])
+            )
+            for qid, r in extra["jev_pack_shuffled"].items()
+            if qid in results["jev_pack"]
+        ]
+        w(
+            f"Candidate-order sensitivity (jev_pack, original vs shuffled order, n={len(rho)}): "
+            f"mean Spearman {mean(rho):.3f}; same top-1 candidate in {pct(mean(same_top))}% of queries.\n"
+        )
     if extra["jev_pair_rerun"] and results["jev_pair"]:
-        diffs = [mean(abs(a - b) for a, b in zip(results["jev_pair"][qid]["scores"], r["scores"]))
-                 for qid, r in extra["jev_pair_rerun"].items() if qid in results["jev_pair"]]
-        rho = [spearman(results["jev_pair"][qid]["scores"], r["scores"])
-               for qid, r in extra["jev_pair_rerun"].items() if qid in results["jev_pair"]]
-        w(f"Run-to-run stability (jev_pair, identical inputs, n={len(rho)}): mean |delta P| {mean(diffs):.4f}; mean Spearman {mean(rho):.3f}.\n")
+        diffs = [
+            mean(abs(a - b) for a, b in zip(results["jev_pair"][qid]["scores"], r["scores"]))
+            for qid, r in extra["jev_pair_rerun"].items()
+            if qid in results["jev_pair"]
+        ]
+        rho = [
+            spearman(results["jev_pair"][qid]["scores"], r["scores"])
+            for qid, r in extra["jev_pair_rerun"].items()
+            if qid in results["jev_pair"]
+        ]
+        w(
+            f"Run-to-run stability (jev_pair, identical inputs, n={len(rho)}): mean |delta P| {mean(diffs):.4f}; mean Spearman {mean(rho):.3f}.\n"
+        )
     if results["jev_pair"] and results["jev_pack"]:
-        both = [q["qid"] for q in questions if q["qid"] in results["jev_pair"] and q["qid"] in results["jev_pack"]]
-        rho = [spearman(results["jev_pair"][i]["scores"], results["jev_pack"][i]["scores"]) for i in both]
-        rho = [r for r in rho if r == r]  # drop queries where all scores tie (correlation undefined)
+        both = [
+            q["qid"]
+            for q in questions
+            if q["qid"] in results["jev_pair"] and q["qid"] in results["jev_pack"]
+        ]
+        rho = [
+            spearman(results["jev_pair"][i]["scores"], results["jev_pack"][i]["scores"])
+            for i in both
+        ]
+        rho = [
+            r for r in rho if r == r
+        ]  # drop queries where all scores tie (correlation undefined)
         if rho:
             w(f"Pair vs packed agreement: mean Spearman {mean(rho):.3f} over {len(rho)} queries.\n")
 
@@ -258,18 +324,26 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
         neg = [g[q["qid"]] for q in unanswerable if q["qid"] in g]
         if pos and neg:
             a1 = metrics.auroc([r["p_answerable"] for r in pos], [r["p_answerable"] for r in neg])
-            a2 = metrics.auroc([r["max_rerank_score"] for r in pos], [r["max_rerank_score"] for r in neg])
+            a2 = metrics.auroc(
+                [r["max_rerank_score"] for r in pos], [r["max_rerank_score"] for r in neg]
+            )
             gate_rows.append(f"| {n} | {a1:.3f} | {a2:.3f} | {len(pos)} / {len(neg)} |")
     if gate_rows:
-        w("Signal 1 = Jev P(answerable) over the reranker's top-5 passages. Signal 2 = the reranker's own top score "
-          "(the only gate-like signal a cross-encoder offers; AUROC is rank-based so scales do not matter).\n")
-        w("| reranker | AUROC Jev P(answerable) top-5 | AUROC reranker max score | n answerable / unanswerable |")
+        w(
+            "Signal 1 = Jev P(answerable) over the reranker's top-5 passages. Signal 2 = the reranker's own top score "
+            "(the only gate-like signal a cross-encoder offers; AUROC is rank-based so scales do not matter).\n"
+        )
+        w(
+            "| reranker | AUROC Jev P(answerable) top-5 | AUROC reranker max score | n answerable / unanswerable |"
+        )
         w("|---|---|---|---|")
         out.extend(gate_rows)
     else:
-        w("**Not run.** The gate needs extra Jev calls and the OpenRouter account ran out of credits; "
-          "the Jev probes (run-to-run stability, candidate-order sensitivity) were skipped for the same reason, "
-          "and `jev_pack` covers only 56 of the 107 test questions. Conclusions about Jev as a gate are therefore untested here.")
+        w(
+            "**Not run.** The gate needs extra Jev calls and the OpenRouter account ran out of credits; "
+            "the Jev probes (run-to-run stability, candidate-order sensitivity) were skipped for the same reason, "
+            "and `jev_pack` covers only 56 of the 107 test questions. Conclusions about Jev as a gate are therefore untested here."
+        )
     w("")
 
     config.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -282,7 +356,9 @@ def main(split: str | None, only: list[str] | None = None, tag: str | None = Non
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["dev", "test"], default=None)
-    ap.add_argument("--rerankers", nargs="+", default=None, help="restrict the report to these rerankers")
+    ap.add_argument(
+        "--rerankers", nargs="+", default=None, help="restrict the report to these rerankers"
+    )
     ap.add_argument("--tag", default=None, help="suffix for the report file name")
     a = ap.parse_args()
     main(a.split, a.rerankers, a.tag)

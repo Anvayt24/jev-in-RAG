@@ -1,4 +1,5 @@
 """Write data/eval/spot_check.md: 20 seeded-random questions with their gold evidence for human review."""
+
 import random
 
 from jevbench import config
@@ -17,9 +18,11 @@ picked: list[dict] = []
 for t, n in (("fact", 5), ("table", 5), ("paraphrase", 5), ("multi", 3), ("unanswerable", 2)):
     picked += rng.sample(by_type[t], n)
 
-out = ["# Eval-set spot check (20 questions)\n",
-       "For each item: is the question sensible, and does the quoted evidence actually answer it? "
-       "For unanswerable items: confirm the answer is NOT in the documents.\n"]
+out = [
+    "# Eval-set spot check (20 questions)\n",
+    "For each item: is the question sensible, and does the quoted evidence actually answer it? "
+    "For unanswerable items: confirm the answer is NOT in the documents.\n",
+]
 for i, q in enumerate(picked, start=1):
     lab = label_question(q, list(chunks.values()))
     out.append(f"\n## {i}. `{q['qid']}`  ({q['type']}, mode={q['mode']}, split={q['split']})\n")

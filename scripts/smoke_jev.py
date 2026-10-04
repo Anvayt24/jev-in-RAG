@@ -1,4 +1,5 @@
 """One-call smoke test: confirm the OpenRouter key, endpoint and Jev response shape."""
+
 import os
 import time
 

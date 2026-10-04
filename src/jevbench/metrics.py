@@ -6,6 +6,7 @@ A question has gold *quotes*; each quote maps to the set of chunks containing it
 Gain is quote-level (a chunk earns gain only for quotes not yet covered higher in the ranking), so
 overlapping chunks that repeat the same text do not inflate nDCG.
 """
+
 from __future__ import annotations
 
 import math
@@ -28,7 +29,9 @@ def _needed(per_quote: list[list[str]], mode: str) -> int:
     return 1 if mode == "any" else len(per_quote)
 
 
-def ndcg_at_k(ranked: list[str], per_quote: list[list[str]], mode: str = "any", k: int = 10) -> float:
+def ndcg_at_k(
+    ranked: list[str], per_quote: list[list[str]], mode: str = "any", k: int = 10
+) -> float:
     need = _needed(per_quote, mode)
     if need == 0:
         return 0.0
@@ -52,7 +55,9 @@ def coverage_at_k(ranked: list[str], per_quote: list[list[str]], mode: str, k: i
     return max(flags) if mode == "any" else mean(flags)
 
 
-def question_metrics(ranked: list[str], per_quote: list[list[str]], mode: str = "any") -> dict[str, float]:
+def question_metrics(
+    ranked: list[str], per_quote: list[list[str]], mode: str = "any"
+) -> dict[str, float]:
     gold = {c for ids in per_quote for c in ids}
     return {
         "hit@1": hit_at_k(ranked, gold, 1),
@@ -64,7 +69,9 @@ def question_metrics(ranked: list[str], per_quote: list[list[str]], mode: str = 
     }
 
 
-def bootstrap_ci(values: list[float], n_boot: int = 2000, alpha: float = 0.05, seed: int = 0) -> tuple[float, float, float]:
+def bootstrap_ci(
+    values: list[float], n_boot: int = 2000, alpha: float = 0.05, seed: int = 0
+) -> tuple[float, float, float]:
     """(mean, lo, hi) percentile bootstrap over questions."""
     if not values:
         return (float("nan"),) * 3
@@ -74,7 +81,9 @@ def bootstrap_ci(values: list[float], n_boot: int = 2000, alpha: float = 0.05, s
     return mean(values), means[int(alpha / 2 * n_boot)], means[int((1 - alpha / 2) * n_boot) - 1]
 
 
-def paired_bootstrap_diff(a: list[float], b: list[float], n_boot: int = 2000, seed: int = 0) -> tuple[float, float, float]:
+def paired_bootstrap_diff(
+    a: list[float], b: list[float], n_boot: int = 2000, seed: int = 0
+) -> tuple[float, float, float]:
     """Mean of (a - b) with a 95% bootstrap CI; pairs are resampled together."""
     assert len(a) == len(b)
     return bootstrap_ci([x - y for x, y in zip(a, b)], n_boot=n_boot, seed=seed)

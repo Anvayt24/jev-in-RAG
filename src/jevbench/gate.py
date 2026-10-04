@@ -4,6 +4,7 @@
 
 Writes results/gate/{reranker}.jsonl with p(answerable) per question.
 """
+
 from __future__ import annotations
 
 import argparse
