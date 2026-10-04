@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The unit tests import the heavy ML and API libraries (torch, faiss, cohere, ...) lazily and
+      # use fakes for them, so a light install is enough. ruff is pinned to the locked version.
+      - name: Install test dependencies
+        run: pip install numpy pymupdf python-dotenv pytest "ruff==0.16.10"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+
+      - name: Test
+        run: pytest -q
