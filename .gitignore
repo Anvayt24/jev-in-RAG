@@ -1,0 +1,12 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+cache/
+results/raw/
+
+# third-party source documents and text derived from them (regenerate with jevbench.ingest)
+data/raw/*.pdf
+data/view/
+data/chunks.jsonl
