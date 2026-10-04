@@ -107,9 +107,9 @@ class Evaluation:
     labels: dict[str, dict]  # qid -> label_question() output
     candidates: dict[str, list[dict]]  # qid -> frozen candidate list
     results: dict[str, dict[str, dict]]  # reranker -> qid -> stored result record
-    covered: set[str] = field(default_factory=set)  # qids every selected reranker scored
     probes: dict[str, dict[str, dict]] = field(default_factory=dict)
     gate: dict[str, dict[str, dict]] = field(default_factory=dict)
+    split_questions: list[dict] | None = None  # every question in the split, scored or not
 
     @classmethod
     def load(cls, split: str | None, only: list[str] | None = None) -> Evaluation:
@@ -118,7 +118,8 @@ class Evaluation:
         # compare only questions every selected reranker has covered, so the tables are comparable
         present = [n for n in names if results[n]]
         covered = set.intersection(*(set(results[n]) for n in present)) if present else set()
-        questions = [q for q in load_questions(split) if q["qid"] in covered]
+        split_questions = load_questions(split)
+        questions = [q for q in split_questions if q["qid"] in covered]
         chunks = load_chunks()
         return cls(
             split=split,
@@ -127,10 +128,28 @@ class Evaluation:
             labels={q["qid"]: label_question(q, chunks) for q in questions},
             candidates={q["qid"]: load_candidates(q["qid"])["candidates"] for q in questions},
             results=results,
-            covered=covered,
             probes={n: load_done(n) for n in PROBES},
             gate={n: load_gate(n) for n in names},
+            split_questions=split_questions,
         )
+
+    @cached_property
+    def compared(self) -> set[str]:
+        return {q["qid"] for q in self.questions}
+
+    @property
+    def all_questions(self) -> list[dict]:
+        return self.questions if self.split_questions is None else self.split_questions
+
+    def coverage(self, name: str) -> int:
+        """How many questions of the split this reranker has been scored on."""
+        scored = self.results.get(name, {})
+        return sum(1 for q in self.all_questions if q["qid"] in scored)
+
+    def records(self, name: str) -> dict[str, dict]:
+        """Stored results for a reranker or probe, restricted to the compared questions."""
+        stored = self.results[name] if name in self.results else self.probes.get(name, {})
+        return {qid: record for qid, record in stored.items() if qid in self.compared}
 
     @cached_property
     def answerable(self) -> list[dict]:
@@ -192,11 +211,15 @@ class Evaluation:
 
 
 def section_header(ev: Evaluation) -> list[str]:
+    scored = ", ".join(f"{name} {ev.coverage(name)}" for name in ev.names)
     return [
         f"# Jev reranking benchmark report (split: {ev.split or 'all'})\n",
         f"Questions: {len(ev.questions)} ({len(ev.answerable)} answerable, "
         f"{len(ev.unanswerable)} unanswerable). "
         f"Model: `{config.JEV_MODEL}`; candidates per question: {config.N_CANDIDATES}.\n",
+        f"Questions scored per reranker (of {len(ev.all_questions)} in this split): {scored}. "
+        f"Every table below compares only the {len(ev.questions)} questions that all of them "
+        "have scored.\n",
     ]
 
 
@@ -281,7 +304,7 @@ def section_by_type(ev: Evaluation) -> list[str]:
 def section_latency(ev: Evaluation) -> list[str]:
     rows = []
     for name in ev.names:
-        records = [r for qid, r in ev.results[name].items() if qid in ev.covered]
+        records = list(ev.records(name).values())
         if not records:
             continue
         latency = sorted(r["latency_s"] for r in records)
@@ -308,7 +331,7 @@ def section_latency(ev: Evaluation) -> list[str]:
         "sequential sum is shown too. Cohere/FlashRank latency is the rerank call only.\n",
         *md_table(headers, rows),
     ]
-    pair = ev.results.get("jev_pair")
+    pair = ev.records("jev_pair")
     if pair:
         sequential = [sum(r["meta"].get("per_request_latency_s", [0])) for r in pair.values()]
         n_requests = mean(r["meta"].get("n_requests", 0) for r in pair.values())
@@ -360,7 +383,7 @@ def jev_score_summary(ev: Evaluation, name: str, records: dict[str, dict]) -> li
 def jev_variant_lines(ev: Evaluation) -> list[str]:
     """nDCG@10 of the three ways of scoring a Jev pair request (stored side by side)."""
     lines = []
-    pair = ev.results.get("jev_pair", {})
+    pair = ev.records("jev_pair")
     for variant in ("evidence", "relevant", "mean"):
         values = []
         for q in ev.answerable:
@@ -381,10 +404,10 @@ def jev_variant_lines(ev: Evaluation) -> list[str]:
 def jev_probe_lines(ev: Evaluation) -> list[str]:
     """Order sensitivity, run-to-run stability and pair-vs-packed agreement (when available)."""
     lines = []
-    pair = ev.results.get("jev_pair", {})
-    pack = ev.results.get("jev_pack", {})
-    shuffled = ev.probes.get("jev_pack_shuffled", {})
-    rerun = ev.probes.get("jev_pair_rerun", {})
+    pair = ev.records("jev_pair")
+    pack = ev.records("jev_pack")
+    shuffled = ev.records("jev_pack_shuffled")
+    rerun = ev.records("jev_pair_rerun")
     if shuffled and pack:
         pairs = [(pack[qid]["scores"], r["scores"]) for qid, r in shuffled.items() if qid in pack]
         rho = [spearman(a, b) for a, b in pairs]
@@ -394,6 +417,8 @@ def jev_probe_lines(ev: Evaluation) -> list[str]:
             f"mean Spearman {mean(rho):.3f}; same top-1 candidate in {pct(mean(same_top))}% "
             "of queries.\n"
         )
+    elif "jev_pack" in ev.names:
+        lines.append("Candidate-order sensitivity: not run (no shuffled-order results found).\n")
     if rerun and pair:
         pairs = [(pair[qid]["scores"], r["scores"]) for qid, r in rerun.items() if qid in pair]
         diffs = [mean(abs(x - y) for x, y in zip(a, b, strict=True)) for a, b in pairs]
@@ -402,6 +427,8 @@ def jev_probe_lines(ev: Evaluation) -> list[str]:
             f"Run-to-run stability (jev_pair, identical inputs, n={len(rho)}): "
             f"mean |delta P| {mean(diffs):.4f}; mean Spearman {mean(rho):.3f}.\n"
         )
+    elif "jev_pair" in ev.names:
+        lines.append("Run-to-run stability: not run (no repeated-request results found).\n")
     if pair and pack:
         both = [q["qid"] for q in ev.questions if q["qid"] in pair and q["qid"] in pack]
         rho = [spearman(pair[i]["scores"], pack[i]["scores"]) for i in both]
@@ -417,7 +444,7 @@ def jev_probe_lines(ev: Evaluation) -> list[str]:
 def section_jev(ev: Evaluation) -> list[str]:
     lines = ["## Jev-specific analyses\n"]
     for name in JEV_RERANKERS:
-        records = ev.results.get(name, {})
+        records = ev.records(name)
         if records:
             lines += jev_score_summary(ev, name, records)
     return lines + jev_variant_lines(ev) + jev_probe_lines(ev)
@@ -455,10 +482,8 @@ def section_gate(ev: Evaluation) -> list[str]:
         ]
     else:
         lines.append(
-            "**Not run.** The gate needs extra Jev calls and the OpenRouter account ran out of "
-            "credits; the Jev probes (run-to-run stability, candidate-order sensitivity) were "
-            "skipped for the same reason, and `jev_pack` covers only 56 of the 107 test "
-            "questions. Conclusions about Jev as a gate are therefore untested here."
+            "**Not run.** No gate results were found in `results/gate/` for these questions, so "
+            "this report makes no claim about Jev as an answerability gate."
         )
     lines.append("")
     return lines
