@@ -8,7 +8,7 @@ Questions scored per reranker (of 107 in this split): none 107, flashrank 107, c
 
 Gold chunk present in the candidate list for **93.5%** of answerable questions (43/46).
 
-Candidate-list integrity: OK, every reranker saw byte-identical candidates
+Candidate-list integrity: OK, every reranker was scored on byte-identical candidates that match the frozen lists
 
 ## Ranking quality: All answerable questions
 
